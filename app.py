@@ -92,7 +92,6 @@ def predict():
         },
         "time": str(current_time)
     }
-    print(response)
 
     # Trả về response JSON
     return jsonify(response)

@@ -145,7 +145,7 @@ def predict_big_small():
 
     encoded_time = data['encoded_time'].iloc[0]
     datetime_obj = datetime.strptime(encoded_time, "%Y-%m-%d %H:%M:%S")
-    new_datetime = datetime_obj + timedelta(minutes=5)
+    new_datetime = datetime_obj + timedelta(minutes=2)
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
     print(new_encoded_time)
 
