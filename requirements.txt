@@ -1,0 +1,7 @@
+Flask
+requests
+pandas
+category_encoders
+scikit-learn
+joblib
+tensorflow
