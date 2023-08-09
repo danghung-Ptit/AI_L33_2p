@@ -67,6 +67,18 @@ def crawl_data(max_pages=10000):
                 elif int(draw["open_numbers_formatted"][-2]) < 5:
                     sum_big_small = "Small"
                     
+                    
+                if int(draw["open_numbers_formatted"][-2]) % 2 == 0:
+                    sum_odd_even4 = "Even"
+                elif int(draw["open_numbers_formatted"][-2]) % 2 == 1:
+                    sum_odd_even4 = "Odd"
+                    
+                if int(draw["open_numbers_formatted"][-3]) >= 5:
+                    sum_big_small3 = "Big"
+                elif int(draw["open_numbers_formatted"][-3]) < 5:
+                    sum_big_small3 = "Small"
+                    
+                    
                 draw_dict = {
                     "issue": draw["issue"],
                     "open_numbers": draw["open_numbers"],
@@ -74,17 +86,22 @@ def crawl_data(max_pages=10000):
                     "open_numbers_formatted": draw["open_numbers_formatted"],
                     "sum_total": sum_total,
                     "sum_big_small": sum_big_small,
-                    "sum_odd_even": sum_odd_even
+                    "sum_odd_even": sum_odd_even,
+                    "sum_odd_even4": sum_odd_even4,
+                    "sum_big_small3": sum_big_small3
                 }
                 list_of_dicts.append(draw_dict)
-            df = pd.DataFrame(list_of_dicts, columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even"])
+            df = pd.DataFrame(list_of_dicts, columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even", "sum_odd_even4", "sum_big_small3"])
         else:
             break
         
     return df
 
+
+
 def get_data(data, encoder_scaler):
-    selected_columns = ["issue", "open_numbers_formatted", "sum_big_small", "sum_odd_even"]
+    global count_point_BS, count_point_EO, predict_point_BS, predict_point_EO
+    selected_columns = ["issue", "encoded_time", "open_numbers_formatted", "sum_big_small3","sum_big_small", "sum_odd_even4", "sum_odd_even"]
     data = data[selected_columns]
 
     X_bigSmall = []
@@ -147,11 +164,36 @@ def predict_big_small():
     datetime_obj = datetime.strptime(encoded_time, "%Y-%m-%d %H:%M:%S")
     new_datetime = datetime_obj + timedelta(minutes=2)
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    print(new_encoded_time)
 
     x, y_true_oddEven, y_true_bigSmall = get_data(data,  encoder_scaler)
     y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.515)
     y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.50)
 
 
-    return y_pred_bigSmall, y_true_bigSmall, y_pred_oddEven, y_true_oddEven, new_encoded_time, issue
+
+    # Tính giá trị mới của predict_point_BS và predict_point_EO
+    if (data['sum_big_small3'].loc[0] != data['sum_big_small3'].loc[1]) and (
+            data['sum_big_small3'].loc[1] == data['sum_big_small3'].loc[2]):
+        predict_point_BS = data['sum_big_small3'].loc[1]
+
+        if predict_point_BS == y_pred_bigSmall[0]:
+            point_BS = 2
+        else:
+            point_BS = 1
+
+    else:
+        point_BS = 0
+
+    if (data['sum_odd_even4'].loc[0] != data['sum_odd_even4'].loc[1]) and (
+            data['sum_odd_even4'].loc[1] == data['sum_odd_even4'].loc[2]):
+        predict_point_EO = data['sum_odd_even4'].loc[1]
+
+        if predict_point_EO == y_pred_oddEven[0]:
+            point_EO = 2
+        else:
+            point_EO = 1
+    else:
+        point_EO = 0
+
+
+    return y_pred_bigSmall, y_true_bigSmall, y_pred_oddEven, y_true_oddEven, new_encoded_time, issue, point_EO, point_BS

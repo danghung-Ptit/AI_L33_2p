@@ -46,16 +46,9 @@ def predict():
     if not authenticate(username, password):
         return jsonify({"success": False, "message": "Authentication failed"})
 
-    y_pred_bigSmall, y_true_bigSmall, y_pred_oddEven, y_true_oddEven, new_encoded_time, issue = predict_big_small()
+    y_pred_bigSmall, y_true_bigSmall, y_pred_oddEven, y_true_oddEven, new_encoded_time, issue, point_EO, point_BS = predict_big_small()
 
-    # print("bigSmall")
-    # print(y_true_bigSmall)
-    # print(y_pred_bigSmall)
-    #
-    # print("oddEven")
-    # print(y_true_oddEven)
-    # print(y_pred_oddEven)
-    # print("\n")
+
 
     consecutive_errors_bigSmall = calculate_consecutive_errors(y_true_bigSmall, y_pred_bigSmall)
     consecutive_errors_oddEven = calculate_consecutive_errors(y_true_oddEven, y_pred_oddEven)
@@ -89,6 +82,10 @@ def predict():
         "predict": {
             "even_odd": even_odd_prediction,
             "big_small": big_small_prediction
+        },
+        "point": {
+            "even_odd": str(point_EO),
+            "big_small": str(point_BS)
         },
         "time": str(current_time)
     }
