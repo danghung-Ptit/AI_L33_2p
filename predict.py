@@ -19,18 +19,18 @@ encoder_scaler = None
 def make_request_with_random_proxy(url, proxy_file):
     with open(proxy_file, "r") as file:
         proxies = file.readlines()
-        
+
     proxy = random.choice(proxies)
     proxy = proxy.strip().split(":")
     proxy_address = proxy[0]
     proxy_port = proxy[1]
     proxy_username = proxy[2]
     proxy_password = proxy[3]
-    
+
     proxies = {
         'http': f'http://{proxy_username}:{proxy_password}@{proxy_address}:{proxy_port}'
     }
-    
+
     try:
         response = requests.get(url, proxies=proxies)
         if response.status_code == 200:
@@ -41,12 +41,14 @@ def make_request_with_random_proxy(url, proxy_file):
             print("Yêu cầu không thành công. Mã trạng thái:", response.status_code)
     except requests.exceptions.RequestException as e:
         print("Lỗi kết nối:", e)
-        
+
 
 def crawl_data(max_pages=10000):
-    df = pd.DataFrame(columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even"])
-    
-    for page in range(1, max_pages+1):
+    df = pd.DataFrame(
+        columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small",
+                 "sum_odd_even"])
+
+    for page in range(1, max_pages + 1):
         url = f"https://l33.net/server/lottery/drawResult?lottery_id=49&page={page}&limit=50&date="
         response = make_request_with_random_proxy(url, proxy_file)
         if response.status_code == 200:
@@ -55,30 +57,27 @@ def crawl_data(max_pages=10000):
             list_of_dicts = []
             for draw in draws:
                 sum_total = draw["open_result"]["sumTotalList"]["sumTotal"]
-                
-                
+
                 if int(draw["open_numbers_formatted"][-1]) % 2 == 0:
                     sum_odd_even = "Even"
                 elif int(draw["open_numbers_formatted"][-1]) % 2 == 1:
                     sum_odd_even = "Odd"
-                    
+
                 if int(draw["open_numbers_formatted"][-2]) >= 5:
                     sum_big_small = "Big"
                 elif int(draw["open_numbers_formatted"][-2]) < 5:
                     sum_big_small = "Small"
-                    
-                    
+
                 if int(draw["open_numbers_formatted"][-2]) % 2 == 0:
                     sum_odd_even4 = "Even"
                 elif int(draw["open_numbers_formatted"][-2]) % 2 == 1:
                     sum_odd_even4 = "Odd"
-                    
+
                 if int(draw["open_numbers_formatted"][-3]) >= 5:
                     sum_big_small3 = "Big"
                 elif int(draw["open_numbers_formatted"][-3]) < 5:
                     sum_big_small3 = "Small"
-                    
-                    
+
                 draw_dict = {
                     "issue": draw["issue"],
                     "open_numbers": draw["open_numbers"],
@@ -91,17 +90,19 @@ def crawl_data(max_pages=10000):
                     "sum_big_small3": sum_big_small3
                 }
                 list_of_dicts.append(draw_dict)
-            df = pd.DataFrame(list_of_dicts, columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even", "sum_odd_even4", "sum_big_small3"])
+            df = pd.DataFrame(list_of_dicts,
+                              columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total",
+                                       "sum_big_small", "sum_odd_even", "sum_odd_even4", "sum_big_small3"])
         else:
             break
-        
-    return df
 
+    return df
 
 
 def get_data(data, encoder_scaler):
     global count_point_BS, count_point_EO, predict_point_BS, predict_point_EO
-    selected_columns = ["issue", "encoded_time", "open_numbers_formatted", "sum_big_small3","sum_big_small", "sum_odd_even4", "sum_odd_even"]
+    selected_columns = ["issue", "encoded_time", "open_numbers_formatted", "sum_big_small3", "sum_big_small",
+                        "sum_odd_even4", "sum_odd_even"]
     data = data[selected_columns]
 
     X_bigSmall = []
@@ -127,13 +128,13 @@ def get_data(data, encoder_scaler):
     y_oddEven = np.array(Y_oddEven[:-1])
     y_bigSmall = np.array(Y_bigSmall[:-1])
 
-
     y_true_oddEven = np.where(y_oddEven == 'Even', 0, 1)
     y_true_bigSmall = np.where(y_bigSmall == 'Small', 0, 1)
     x = x.reshape(-1, 10 * 5)
     x = encoder_scaler.transform(x)
 
     return x, y_true_oddEven, y_true_bigSmall
+
 
 def load_model_and_encoder():
     global models, encoder_scaler
@@ -155,6 +156,7 @@ def predict_with_threshold(model, x, threshold=0.5):
 
     return y_pred_binary
 
+
 def predict_big_small():
     load_model_and_encoder()
     data = crawl_data(max_pages=1)
@@ -165,18 +167,26 @@ def predict_big_small():
     new_datetime = datetime_obj + timedelta(minutes=2)
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-    x, y_true_oddEven, y_true_bigSmall = get_data(data,  encoder_scaler)
-    y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.515)
-    y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.50)
+    x, y_true_oddEven, y_true_bigSmall = get_data(data, encoder_scaler)
+    y_pred_oddEven = predict_with_threshold(models['oddEven'], x, threshold=0.515)
+    y_pred_bigSmall = predict_with_threshold(models['bigSmall'], x, threshold=0.50)
 
+    if y_pred_oddEven[0][0] == 1:
+        pred_oddEven = "Odd"
+    elif y_pred_oddEven[0][0] == 0:
+        pred_oddEven = "Even"
 
+    if y_pred_bigSmall[0][0] == 1:
+        pred_bigSmall = "Big"
+    elif y_pred_bigSmall[0][0] == 0:
+        pred_bigSmall = "Small"
 
     # Tính giá trị mới của predict_point_BS và predict_point_EO
     if (data['sum_big_small3'].loc[0] != data['sum_big_small3'].loc[1]) and (
             data['sum_big_small3'].loc[1] == data['sum_big_small3'].loc[2]):
         predict_point_BS = data['sum_big_small3'].loc[1]
 
-        if predict_point_BS == y_pred_bigSmall[0]:
+        if predict_point_BS == pred_bigSmall:
             point_BS = 2
         else:
             point_BS = 1
@@ -188,12 +198,11 @@ def predict_big_small():
             data['sum_odd_even4'].loc[1] == data['sum_odd_even4'].loc[2]):
         predict_point_EO = data['sum_odd_even4'].loc[1]
 
-        if predict_point_EO == y_pred_oddEven[0]:
+        if predict_point_EO == pred_oddEven:
             point_EO = 2
         else:
             point_EO = 1
     else:
         point_EO = 0
-
 
     return y_pred_bigSmall, y_true_bigSmall, y_pred_oddEven, y_true_oddEven, new_encoded_time, issue, point_EO, point_BS
