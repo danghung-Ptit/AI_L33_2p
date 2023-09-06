@@ -139,11 +139,11 @@ def load_model_and_encoder():
     global models, encoder_scaler
 
     if models['oddEven'] is None:
-        models['oddEven'] = load_model('model/model_oddEven_2p.h5')
+        models['oddEven'] = load_model('model/new_model_0609.h5')
     if models['bigSmall'] is None:
-        models['bigSmall'] = load_model('model/model_bigSmall_2p.h5')
+        models['bigSmall'] = load_model('model/new_model_0609.h5')
     if encoder_scaler is None:
-        encoder_scaler = joblib.load("model/encoder_scaler.save")
+        encoder_scaler = joblib.load("model/new_scaler_0609.save")
 
 
 def predict_with_threshold(model, x, threshold=0.5):
@@ -166,8 +166,8 @@ def predict_big_small():
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     x, y_true_oddEven, y_true_bigSmall = get_data(data,  encoder_scaler)
-    y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.515)
-    y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.50)
+    y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.5)
+    y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.5)
 
 
 
