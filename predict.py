@@ -47,7 +47,7 @@ def crawl_data(max_pages=10000):
     df = pd.DataFrame(columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even"])
     
     for page in range(1, max_pages+1):
-        url = f"https://l33.net/server/lottery/drawResult?lottery_id=49&page={page}&limit=50&date="
+        url = f"https://l3377.com/server/lottery/drawResult?lottery_id=49&page={page}&limit=50&date="
         response = make_request_with_random_proxy(url, proxy_file)
         if response.status_code == 200:
             data = response.json()
@@ -139,11 +139,11 @@ def load_model_and_encoder():
     global models, encoder_scaler
 
     if models['oddEven'] is None:
-        models['oddEven'] = load_model('model/new_model_0609.h5')
+        models['oddEven'] = load_model('model/model_oddEven.h5')
     if models['bigSmall'] is None:
-        models['bigSmall'] = load_model('model/new_model_0609.h5')
+        models['bigSmall'] = load_model('model/model_bigSmall.h5')
     if encoder_scaler is None:
-        encoder_scaler = joblib.load("model/new_scaler_0609.save")
+        encoder_scaler = joblib.load("model/encoder_scaler.save")
 
 
 def predict_with_threshold(model, x, threshold=0.5):
@@ -166,8 +166,8 @@ def predict_big_small():
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     x, y_true_oddEven, y_true_bigSmall = get_data(data,  encoder_scaler)
-    y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.5)
-    y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.5)
+    y_pred_oddEven = predict_with_threshold(models['oddEven'] , x, threshold=0.489)
+    y_pred_bigSmall = predict_with_threshold(models['bigSmall'] , x, threshold=0.4915)
 
 
 
