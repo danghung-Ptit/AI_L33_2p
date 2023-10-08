@@ -161,7 +161,7 @@ def predict_big_small():
     issue = int(data['issue'].iloc[0]) + 1
 
     encoded_time = data['encoded_time'].iloc[0]
-    datetime_obj = datetime.strptime(encoded_time, "%Y-%m-%d %H:%M:%S")
+    datetime_obj = datetime.strptime(encoded_time, "%d/%m/%Y %H:%M:%S")
     new_datetime = datetime_obj + timedelta(minutes=2)
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
