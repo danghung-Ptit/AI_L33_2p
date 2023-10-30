@@ -40,44 +40,51 @@ def make_request_with_random_proxy(url, proxy_file):
     except requests.exceptions.RequestException as e:
         print("Lỗi kết nối:", e)
 
-def crawl_data(max_pages=10000):
-    df = pd.DataFrame(columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even"])
-    
-    for page in range(1, max_pages+1):
-        url = f"https://l3377.com/server/lottery/drawResult?lottery_id=49&page={page}&limit=50&date="
-        response = make_request_with_random_proxy(url, proxy_file)
-        if response.status_code == 200:
-            data = response.json()
-            draws = data["data"]["list"]
-            list_of_dicts = []
-            for draw in draws:
-                sum_total = draw["open_result"]["sumTotalList"]["sumTotal"]
-
-                if int(draw["open_numbers_formatted"][-1]) % 2 == 0:
-                    sum_odd_even = "Even"
-                elif int(draw["open_numbers_formatted"][-1]) % 2 == 1:
-                    sum_odd_even = "Odd"
-
-                if int(draw["open_numbers_formatted"][-2]) >= 5:
-                    sum_big_small = "Big"
-                elif int(draw["open_numbers_formatted"][-2]) < 5:
-                    sum_big_small = "Small"
-
-                draw_dict = {
-                    "issue": draw["issue"],
-                    "open_numbers": draw["open_numbers"],
-                    "encoded_time": draw["encoded_time"],
-                    "open_numbers_formatted": draw["open_numbers_formatted"],
-                    "sum_total": sum_total,
+def get_data_from_api():
+    try:
+        url = 'http://123.30.234.209:8080/l33/'
+        headers = {
+            'accept': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers)
+        
+        response.raise_for_status()
+        
+        data = response.json()
+        data_list = data.get("data", [])
+        data_extracted = []
+        
+        for item in data_list:
+            open_numbers_formatted = item.get("open_numbers_formatted", [])
+            if len(open_numbers_formatted) >= 2:
+                last_number = int(open_numbers_formatted[-1])
+                second_last_number = int(open_numbers_formatted[-2])
+                
+                sum_odd_even = "Even" if last_number % 2 == 0 else "Odd"
+                sum_big_small = "Big" if second_last_number >= 5 else "Small"
+                
+                extracted_data = {
+                    "issue": item.get("issue"),
+                    "encoded_time": item.get("begin_time"),
+                    "open_numbers_formatted": open_numbers_formatted,
                     "sum_big_small": sum_big_small,
                     "sum_odd_even": sum_odd_even
                 }
-                list_of_dicts.append(draw_dict)
-            df = pd.DataFrame(list_of_dicts, columns=["issue", "open_numbers", "encoded_time", "open_numbers_formatted", "sum_total", "sum_big_small", "sum_odd_even"])
-        else:
-            break
+                data_extracted.append(extracted_data)
+                
+        df = pd.DataFrame(data_extracted)
+        return df
+    except requests.exceptions.HTTPError as errh:
+        print("HTTP Error:", errh)
+    except requests.exceptions.ConnectionError as errc:
+        print("Error Connecting:", errc)
+    except requests.exceptions.Timeout as errt:
+        print("Timeout Error:", errt)
+    except requests.exceptions.RequestException as err:
+        print("OOps: Something Else", err)
         
-    return df
+    return None
 
 def get_data(data, encoder_scaler):
     selected_columns = ["issue", "encoded_time", "open_numbers_formatted", "sum_big_small", "sum_odd_even"]
@@ -174,7 +181,7 @@ def calculate_wrong(df, target_col):
 
 def predict_l33():
     load_model_and_encoder()
-    data = crawl_data(max_pages=1)
+    data = get_data_from_api()
     issue = int(data['issue'].iloc[0]) + 1
 
     encoded_time = data['encoded_time'].iloc[0]
