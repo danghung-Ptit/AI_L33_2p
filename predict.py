@@ -42,7 +42,7 @@ def make_request_with_random_proxy(url, proxy_file):
 
 def get_data_from_api():
     try:
-        url = 'http://123.30.234.209:8080/l33/'
+        url = 'http://10.10.18.3:8080/l33/'
         headers = {
             'accept': 'application/json'
         }
@@ -185,7 +185,7 @@ def predict_l33():
     issue = int(data['issue'].iloc[0]) + 1
 
     encoded_time = data['encoded_time'].iloc[0]
-    datetime_obj = datetime.strptime(encoded_time, "%d/%m/%Y %H:%M:%S")
+    datetime_obj = datetime.strptime(encoded_time, "%Y-%m-%dT%H:%M:%S")
     new_datetime = datetime_obj + timedelta(minutes=2)
     new_encoded_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
